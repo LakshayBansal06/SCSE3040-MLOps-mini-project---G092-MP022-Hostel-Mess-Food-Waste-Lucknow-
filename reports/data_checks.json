@@ -1,0 +1,38 @@
+{
+  "leaking_column": {
+    "present": false,
+    "column": null
+  },
+  "unit_mixup": {
+    "present": true,
+    "column": "cooked_kg",
+    "group_value": "Boys Hostel 2",
+    "factor": 1000
+  },
+  "sentinel_value": {
+    "present": true,
+    "column": "students_registered",
+    "value": -999,
+    "count": 45
+  },
+  "duplicate_rows": {
+    "present": false,
+    "count": null
+  },
+  "stuck_sensor": {
+    "present": true,
+    "column": "menu_rating",
+    "start_date": "2026-03-29",
+    "end_date": "2026-04-11"
+  },
+  "target_typos": {
+    "present": true,
+    "count": 10,
+    "threshold": 137.09
+  },
+  "spelling_variants": {
+    "present": false,
+    "column": null,
+    "true_levels": null
+  }
+}
