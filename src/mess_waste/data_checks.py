@@ -139,6 +139,11 @@ def find_duplicate_rows(df: pd.DataFrame, id_column: str) -> dict:
     We count exact duplicate rows, and also rows that repeat every value
     except the record id (a re-typed record with a new id).
     """
+    if id_column not in df.columns:
+        raise ValueError(
+            f"Cannot check duplicate rows: ID column {id_column!r} is missing"
+        )
+
     exact = int(df.duplicated().sum())
     without_id = int(df.drop(columns=[id_column]).duplicated().sum())
     count = max(exact, without_id)

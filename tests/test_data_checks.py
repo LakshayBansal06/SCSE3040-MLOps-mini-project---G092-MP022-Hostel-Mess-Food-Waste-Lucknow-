@@ -81,6 +81,14 @@ def test_duplicates_counted(clean_df):
     assert find_duplicate_rows(df, "record_id") == {"present": True, "count": 3}
 
 
+def test_duplicate_check_reports_missing_id_column(clean_df):
+    with pytest.raises(
+        ValueError,
+        match="Cannot check duplicate rows: ID column 'record_id' is missing",
+    ):
+        find_duplicate_rows(clean_df.drop(columns="record_id"), "record_id")
+
+
 def test_stuck_sensor_found(clean_df):
     df = clean_df.copy()
     df.loc[10:34, "menu_rating"] = 3.4  # 25 days in a row
