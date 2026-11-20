@@ -1,0 +1,40 @@
+# Project settings for G092 / MP022 (Hostel Mess Food Waste, Lucknow).
+# Every script reads this file with yaml.safe_load (see src/mess_waste/config.py).
+
+data:
+  train: data/raw/train.csv
+  later: data/raw/later.csv
+  holdout: data/raw/holdout_features.csv
+  id_column: record_id
+  date_column: date
+  target: waste_kg
+  group_column: hostel
+  numeric_features:
+    - students_registered
+    - attendance_pct
+    - menu_rating
+    - temp_c
+    - cooked_kg
+    - plate_size_cm
+  categorical_features:
+    - meal
+    - hostel
+
+checks:
+  # leaking_column: a feature that tracks the target almost perfectly
+  leak_corr_threshold: 0.98
+  # unit_mixup: exact unit conversions we test for, and how far off a group must be
+  unit_factors: [10, 12, 60, 100, 1000]
+  unit_min_ratio: 5.0
+  # sentinel_value: special numbers typed instead of a blank
+  sentinel_candidates: [-1, -99, -999, 999, 9999]
+  sentinel_min_count: 3
+  # stuck_sensor: longest run of one repeated value after sorting by date
+  stuck_min_rows: 20
+  stuck_min_days: 7
+  # target_typos: values 10x too big sit above a big empty gap
+  typo_gap_ratio: 3.0
+  typo_max_share: 0.05
+
+reports:
+  data_checks: reports/data_checks.json
