@@ -15,20 +15,20 @@ PARAMS_PATH = ROOT / "params.yaml"
 
 def load_params(path: str | Path = PARAMS_PATH) -> dict:
     """Read params.yaml with yaml.safe_load."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    with open(path, "r", encoding="utf-8") as file:
+        return yaml.safe_load(file)
 
 
 def resolve(path: str | Path) -> Path:
-    """Turn a path from params.yaml (relative to the repo root) into an absolute path."""
+    """Turn a params.yaml path into an absolute path."""
     p = Path(path)
     return p if p.is_absolute() else ROOT / p
 
 
 def file_sha256(path: str | Path) -> str:
     """SHA-256 of a file's raw bytes (logged as data_sha256 in every MLflow run)."""
-    with open(resolve(path), "rb") as f:
-        return hashlib.sha256(f.read()).hexdigest()
+    with open(resolve(path), "rb") as file:
+        return hashlib.sha256(file.read()).hexdigest()
 
 
 def load_csv(path: str | Path) -> pd.DataFrame:

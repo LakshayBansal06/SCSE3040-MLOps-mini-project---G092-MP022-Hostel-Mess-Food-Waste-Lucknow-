@@ -6,20 +6,26 @@
 2. Create and activate a Python virtual environment.
 3. Install dependencies:
 
+   ```bash
    pip install -r requirements.txt
    pip install dvc
+   ```
 
 ## Running Tests
 
 Run the test suite using:
 
+   ```bash
    pytest
+   ```
 
 ## Running Data Validation
 
 Execute the data checks with:
 
+   ```bash
    PYTHONPATH=src python -m mess_waste.data_checks
+   ```
 
 ## Development Guidelines
 
@@ -35,4 +41,6 @@ Use descriptive commit messages that explain the change.
 
 Example:
 
+   ```bash
    git commit -m "docs: add project contribution guidelines"
+   ```
