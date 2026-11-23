@@ -3,8 +3,8 @@
   "v2_mae_later": 4.335214012345684,
   "required_v2_mae": 9.467992166666665,
   "v2_promoted": true,
-  "v2_registered_version": "2",
-  "champion_version": "2",
+  "v2_registered_version": "3",
+  "champion_version": "3",
   "psi": {
     "students_registered": 0.04776748811614069,
     "attendance_pct": 0.023689059151598475,
@@ -14,10 +14,11 @@
     "plate_size_cm": 0.02387446582431789
   },
   "v1_mae_by_hostel": {
-    "boys hostel 1": 7.9221194444444425,
-    "boys hostel 2": 7.974170043572981,
-    "girls hostel": 25.7031876068376
+    "boys hostel 1": 7.197682471264373,
+    "boys hostel 2": 8.055605708812255,
+    "girls hostel": 27.514284045584027
   },
-  "v2_run_id": "151dfb8235d540b49dc13f2bd28eba6c",
-  "holdout_predictions": "/Users/exs/SCSE3040-MLOps-mini-project---G092-MP022-Hostel-Mess-Food-Waste-Lucknow-/reports/holdout_predictions.csv"
+  "v2_run_id": "c309165167d94e0e8459721e677c0ed8",
+  "holdout_predictions": "/Users/exs/SCSE3040-MLOps-mini-project---G092-MP022-Hostel-Mess-Food-Waste-Lucknow-/predictions/holdout_predictions.csv",
+  "model_artifact": "/Users/exs/SCSE3040-MLOps-mini-project---G092-MP022-Hostel-Mess-Food-Waste-Lucknow-/models/model.joblib"
 }
