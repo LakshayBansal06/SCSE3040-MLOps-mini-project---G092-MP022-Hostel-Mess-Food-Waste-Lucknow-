@@ -1,7 +1,7 @@
 """Monitor data drift, evaluate V1, train V2 and generate holdout predictions."""
 
 import json
-
+import joblib
 import mlflow
 import mlflow.sklearn
 import numpy as np
@@ -106,21 +106,24 @@ def main():
 
     v1_predictions = v1.predict(X_test)
     v1_mae = mean_absolute_error(y_test, v1_predictions)
+    # Calculate hostel-wise MAE across ALL rows of later.csv.
+    later_all = later_raw.copy()
+
+    for col in categorical:
+        later_all[col] = later_all[col].map(normalise_label)
 
     hostel_mae = {}
 
-    for hostel, group in later_test.groupby(group_col):
+    for hostel, group in later_all.groupby(group_col):
         predictions = v1.predict(group[features])
         hostel_mae[str(hostel)] = float(
             mean_absolute_error(group[target], predictions)
         )
-
     # Train V2 on cleaned train + first 70% of later data.
     combined = pd.concat(
         [cleaned_train, later_train],
         ignore_index=True,
     )
-
     X_v2 = combined[features]
     y_v2 = combined[target]
 
@@ -168,9 +171,15 @@ def main():
         )
 
     # Load the champion model and generate holdout predictions.
+    # Load the champion model and generate holdout predictions.
     champion = mlflow.sklearn.load_model(
         f"models:/{MODEL_NAME}@champion"
     )
+
+    # Export champion pipeline for the Stage 3 API.
+    model_path = resolve("models/model.joblib")
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(champion, model_path)
 
     for col in categorical:
         holdout[col] = holdout[col].map(normalise_label)
@@ -178,11 +187,11 @@ def main():
     holdout_predictions = champion.predict(holdout[features])
 
     prediction_output = pd.DataFrame({
-        data["id_column"]: holdout[data["id_column"]],
-        target: holdout_predictions,
+        "record_id": holdout[data["id_column"]],
+        "prediction": holdout_predictions,
     })
 
-    output_path = resolve("reports/holdout_predictions.csv")
+    output_path = resolve("predictions/holdout_predictions.csv")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     prediction_output.to_csv(output_path, index=False)
 
@@ -200,6 +209,7 @@ def main():
         "v1_mae_by_hostel": hostel_mae,
         "v2_run_id": v2_run_id,
         "holdout_predictions": str(output_path),
+	"model_artifact": str(model_path),
     }
 
     report_path = resolve("reports/monitoring.json")
