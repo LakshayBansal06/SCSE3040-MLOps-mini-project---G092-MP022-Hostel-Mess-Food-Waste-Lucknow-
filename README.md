@@ -35,12 +35,16 @@ src/mess_waste/           our Python package
   config.py               loads params.yaml, file hashing, CSV loading
   data_checks.py          the seven data-problem checks
   data_cleaning.py        transformations for the cleaned training data
+  tracking.py             MLflow setup (sqlite:///mlflow.db)
+  train.py                trains v1 (3 settings), registers the best, sets @champion
+  monitor.py              PSI drift, v1 MAE per hostel, v2 retrain, promotion rule
 tests/                    pytest tests (build their own small data, no CSVs needed)
 data/raw/*.csv.dvc        DVC pointers for train.csv and later.csv (CSVs not in git)
 data/raw/holdout_features.csv
 .dvc/config               from dvc init
 reports/findings.yaml     the marking form
 reports/data_checks.json  full output of the data checks
+mlflow.db                 MLflow runs and model registry (committed)
 docs/                     PROBLEM.md and STUDENT_HANDBOOK.md from the brief
 ```
 
@@ -85,6 +89,31 @@ SHA-256 of the original `train.csv`
 (logged as `data_sha256` in every MLflow run):
 `20b940086cd33d3aea1523bfab94b69bd4597fbcf1c9df442d45bf18e9eae369`
 
+## Stage 2: cleaning, MLflow tracking and registry
+
+```bash
+PYTHONPATH=src python -m mess_waste.data_cleaning   # writes data/clean/train.csv
+PYTHONPATH=src python -m mess_waste.train           # 3 runs, registers the best as v1
+```
+
+Cleaning fixes every problem found in Stage 1: `cooked_kg` of Boys Hostel 2
+divided by 1000, `-999` in `students_registered` replaced by the median, the
+stuck `menu_rating` run interpolated, the 10 target typos divided by 10, and
+labels normalised.
+
+Training tracks to `sqlite:///mlflow.db` in the experiment `hostel-mess-waste`.
+Every run logs `data_sha256` and `mae_validation`. Three settings were tried:
+
+| Run | Model | Validation MAE |
+|---|---|---|
+| `random_forest_200` | RandomForest, 200 trees, max depth 8 | 3.601 |
+| `random_forest_300` | RandomForest, 300 trees, min leaf 2 | 3.500 |
+| `extra_trees_300` | ExtraTrees, 300 trees, min leaf 2 | **3.301** |
+
+The best (`extra_trees_300`, run `96a1a07d2a444b77be67ddf9194d9c1e`) is
+registered as `hostel-mess-waste-regressor` version 1 and got the alias
+`champion`.
+
 ## Tests
 
 ```bash
@@ -94,6 +123,6 @@ pytest
 ## Progress
 
 - [x] Stage 1: repo, DVC, the seven data problems, `findings.yaml` data part
-- [ ] Stage 2: cleaning code, MLflow tracking and registry, tests
+- [x] Stage 2: cleaning code, MLflow tracking and registry, tests
 - [ ] Stage 3: FastAPI service, Dockerfile, GitHub Actions, Kubernetes, logging
 - [ ] Stage 4: drift, retraining, holdout predictions, rest of `findings.yaml`
