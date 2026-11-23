@@ -1,62 +1,53 @@
-# MP022 findings --- fill in every value, keep every key.
-# The marking tool reads this file. Write null only where the comment says so.
-# Use the exact column names and group values from your data files.
-
-group_id: "G092"          # your group id, e.g. "G042"
-problem_id: "MP022"
-
+group_id: G092
+problem_id: MP022
 data_issues:
-  # For each of the 7 kinds: present: true or false.
-  # If present is false, leave the other values as null.
   leaking_column:
     present: false
-    column: null           # the column that must not be used as a feature
+    column: null
   unit_mixup:
     present: true
-    column: cooked_kg      # the column recorded in a different unit
-    group_value: "Boys Hostel 2"   # the value of hostel whose rows are affected
-    factor: 1000           # wrong value = right value x factor
+    column: cooked_kg
+    group_value: Boys Hostel 2
+    factor: 1000
   sentinel_value:
     present: true
     column: students_registered
-    value: -999            # the special number typed instead of a blank
-    count: 45              # how many rows have it
+    value: -999
+    count: 45
   duplicate_rows:
     present: false
-    count: null            # number of EXTRA copies (rows you would delete)
+    count: null
   stuck_sensor:
     present: true
     column: menu_rating
-    start_date: "2026-03-29"   # first date with the stuck value, YYYY-MM-DD
-    end_date: "2026-04-11"     # last date with the stuck value, YYYY-MM-DD
+    start_date: '2026-03-29'
+    end_date: '2026-04-11'
   target_typos:
     present: true
-    count: 10              # rows whose target was typed 10 times too big
+    count: 10
   spelling_variants:
     present: false
     column: null
-    true_levels: null      # how many real categories there are after cleaning
-
+    true_levels: null
 tracking:
-  experiment_name: null
-  best_run_id: null        # the MLflow run id of your v1 model
-  registered_model_name: null
-  champion_version: null
-
+  experiment_name: hostel-mess-waste
+  best_run_id: 151dfb8235d540b49dc13f2bd28eba6c
+  registered_model_name: hostel-mess-waste-regressor
+  champion_version: 2
 monitoring:
-  psi:                     # cleaned train.csv vs later.csv, 10 bins
-    students_registered: null
-    attendance_pct: null
-    menu_rating: null
-    temp_c: null
-    cooked_kg: null
-    plate_size_cm: null
-  most_drifted_feature: null
-  mae_by_group:            # v1 on later.csv, per value of hostel
-    'Boys Hostel 1': null
-    'Boys Hostel 2': null
-    'Girls Hostel': null
-  worst_served_group: null
-  mae_v1_on_check: null    # v1 on the last 30% of later.csv (by date)
-  mae_v2_on_check: null    # v2 on the same rows
-  decision: null           # promote or keep
+  psi:
+    students_registered: 0.04776748811614069
+    attendance_pct: 0.023689059151598475
+    menu_rating: 0.06620078044330958
+    temp_c: 6.730788156063076
+    cooked_kg: 0.03509978193991823
+    plate_size_cm: 0.02387446582431789
+  most_drifted_feature: temp_c
+  mae_by_group:
+    Boys Hostel 1: 7.9221194444444425
+    Boys Hostel 2: 7.974170043572981
+    Girls Hostel: 25.7031876068376
+  worst_served_group: Girls Hostel
+  mae_v1_on_check: 10.519991296296293
+  mae_v2_on_check: 4.335214012345684
+  decision: promote_v2
