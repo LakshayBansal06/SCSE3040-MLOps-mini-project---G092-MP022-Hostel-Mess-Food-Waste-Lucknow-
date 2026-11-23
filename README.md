@@ -34,6 +34,7 @@ params.yaml               paths and settings, read with yaml.safe_load
 src/mess_waste/           our Python package
   config.py               loads params.yaml, file hashing, CSV loading
   data_checks.py          the seven data-problem checks
+  data_cleaning.py        transformations for the cleaned training data
 tests/                    pytest tests (build their own small data, no CSVs needed)
 data/raw/*.csv.dvc        DVC pointers for train.csv and later.csv (CSVs not in git)
 data/raw/holdout_features.csv
