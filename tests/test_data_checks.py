@@ -25,7 +25,9 @@ def clean_df():
     return pd.DataFrame(
         {
             "record_id": [f"R{i:05d}" for i in range(n)],
-            "date": pd.date_range("2026-01-01", periods=n, freq="D").strftime("%Y-%m-%d"),
+            "date": pd.date_range(
+                "2026-01-01", periods=n, freq="D"
+            ).strftime("%Y-%m-%d"),
             "students_registered": [300 + (i * 37) % 700 for i in range(n)],
             "menu_rating": [1 + (i * 7) % 40 / 10 for i in range(n)],
             "cooked_kg": [100 + (i * 13) % 400 for i in range(n)],
@@ -45,7 +47,9 @@ def test_params_file_is_read():
 def test_clean_data_has_no_problems(clean_df):
     holdout = clean_df.drop(columns="waste_kg")
     num = ["students_registered", "menu_rating", "cooked_kg"]
-    assert not find_leaking_column(clean_df, holdout, "waste_kg", "record_id")["present"]
+    assert not find_leaking_column(
+        clean_df, holdout, "waste_kg", "record_id"
+    )["present"]
     assert not find_unit_mixup(clean_df, num, "hostel", [10, 100, 1000])["present"]
     assert not find_sentinel_value(clean_df, num, [-1, -999, 999])["present"]
     assert not find_duplicate_rows(clean_df, "record_id")["present"]
@@ -65,15 +69,27 @@ def test_unit_mixup_found(clean_df):
     df = clean_df.copy()
     mask = df["hostel"] == "Boys Hostel 2"
     df.loc[mask, "cooked_kg"] = df.loc[mask, "cooked_kg"] * 1000
-    res = find_unit_mixup(df, ["cooked_kg"], "hostel", [10, 12, 60, 100, 1000])
-    assert res == {"present": True, "column": "cooked_kg", "group_value": "Boys Hostel 2", "factor": 1000}
+    res = find_unit_mixup(
+        df, ["cooked_kg"], "hostel", [10, 12, 60, 100, 1000]
+    )
+    assert res == {
+        "present": True,
+        "column": "cooked_kg",
+        "group_value": "Boys Hostel 2",
+        "factor": 1000,
+    }
 
 
 def test_sentinel_found(clean_df):
     df = clean_df.copy()
     df.loc[:4, "students_registered"] = -999
     res = find_sentinel_value(df, ["students_registered"], [-1, -999, 999], min_count=3)
-    assert res == {"present": True, "column": "students_registered", "value": -999, "count": 5}
+    assert res == {
+        "present": True,
+        "column": "students_registered",
+        "value": -999,
+        "count": 5,
+    }
 
 
 def test_duplicates_counted(clean_df):

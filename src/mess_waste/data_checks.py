@@ -39,7 +39,7 @@ def _py(x):
     return x
 
 
-# 1. leaking_column -------------------------------------------------------------
+# 1. leaking_column
 def find_leaking_column(
     train: pd.DataFrame,
     holdout: pd.DataFrame,
@@ -69,7 +69,7 @@ def find_leaking_column(
     return {"present": True, "column": candidates[0]}
 
 
-# 2. unit_mixup ----------------------------------------------------------------
+# 2. unit_mixup
 def find_unit_mixup(
     df: pd.DataFrame,
     numeric_cols: list[str],
@@ -110,7 +110,7 @@ def find_unit_mixup(
     return {"present": True, "column": col, "group_value": grp, "factor": _py(factor)}
 
 
-# 3. sentinel_value ------------------------------------------------------------
+# 3. sentinel_value
 def find_sentinel_value(
     df: pd.DataFrame,
     numeric_cols: list[str],
@@ -132,7 +132,7 @@ def find_sentinel_value(
     return {"present": True, "column": col, "value": _py(value), "count": n}
 
 
-# 4. duplicate_rows ------------------------------------------------------------
+# 4. duplicate_rows
 def find_duplicate_rows(df: pd.DataFrame, id_column: str) -> dict:
     """Extra copies of the same record.
 
@@ -152,7 +152,7 @@ def find_duplicate_rows(df: pd.DataFrame, id_column: str) -> dict:
     return {"present": True, "count": count}
 
 
-# 5. stuck_sensor --------------------------------------------------------------
+# 5. stuck_sensor
 def longest_run(df: pd.DataFrame, col: str, date_col: str) -> dict:
     """Longest block of consecutive rows (sorted by date) with one value."""
     d = df.sort_values(date_col, kind="stable").reset_index(drop=True)
@@ -198,7 +198,7 @@ def find_stuck_sensor(
     }
 
 
-# 6. target_typos --------------------------------------------------------------
+# 6. target_typos
 def find_target_typos(
     df: pd.DataFrame,
     target: str,
@@ -225,7 +225,7 @@ def find_target_typos(
     return {"present": True, "count": int(n_above), "threshold": round(threshold, 2)}
 
 
-# 7. spelling_variants ---------------------------------------------------------
+# 7. spelling_variants
 def normalise_label(s: str) -> str:
     """'Rain', ' rain ', 'RAIN.' -> 'rain'."""
     s = str(s).strip().lower()
@@ -254,7 +254,7 @@ def find_spelling_variants(
     return _absent("column", "true_levels")
 
 
-# Run everything ----------------------------------------------------------------
+# Run everything
 FINDINGS_KEYS = {
     "leaking_column": ["present", "column"],
     "unit_mixup": ["present", "column", "group_value", "factor"],
@@ -297,13 +297,18 @@ def run_all_checks(
 
 def to_findings(results: dict) -> dict:
     """Keep only the keys that reports/findings.yaml asks for."""
-    return {k: {f: results[k].get(f) for f in keys} for k, keys in FINDINGS_KEYS.items()}
+    return {
+        name: {field: results[name].get(field) for field in fields}
+        for name, fields in FINDINGS_KEYS.items()
+    }
 
 
 def main() -> dict:
     params = load_params()
     d = params["data"]
-    train, later, holdout = load_csv(d["train"]), load_csv(d["later"]), load_csv(d["holdout"])
+    train = load_csv(d["train"])
+    later = load_csv(d["later"])
+    holdout = load_csv(d["holdout"])
     results = run_all_checks(train, later, holdout, params)
 
     out = resolve(params["reports"]["data_checks"])
