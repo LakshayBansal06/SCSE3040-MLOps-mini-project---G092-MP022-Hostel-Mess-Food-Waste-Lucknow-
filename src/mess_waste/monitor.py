@@ -216,7 +216,8 @@ def main():
 
     findings["tracking"] = {
         "experiment_name": EXPERIMENT_NAME,
-        "best_run_id": v2_run_id if promoted else "96a1a07d2a444b77be67ddf9194d9c1e",
+        # findings.yaml asks for the run id of the v1 model (version 1)
+        "best_run_id": client.get_model_version(MODEL_NAME, "1").run_id,
         "registered_model_name": MODEL_NAME,
         "champion_version": int(registered.version if promoted else 1),
     }
