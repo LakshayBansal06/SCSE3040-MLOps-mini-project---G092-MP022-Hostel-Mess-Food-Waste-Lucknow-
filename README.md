@@ -97,4 +97,3 @@ pytest
 - [ ] Stage 2: cleaning code, MLflow tracking and registry, tests
 - [ ] Stage 3: FastAPI service, Dockerfile, GitHub Actions, Kubernetes, logging
 - [ ] Stage 4: drift, retraining, holdout predictions, rest of `findings.yaml`
-
