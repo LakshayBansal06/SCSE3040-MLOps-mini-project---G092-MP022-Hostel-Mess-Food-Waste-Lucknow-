@@ -31,7 +31,7 @@ data_issues:
     true_levels: null
 tracking:
   experiment_name: hostel-mess-waste
-  best_run_id: 151dfb8235d540b49dc13f2bd28eba6c
+  best_run_id: 96a1a07d2a444b77be67ddf9194d9c1e
   registered_model_name: hostel-mess-waste-regressor
   champion_version: 2
 monitoring:
@@ -50,4 +50,4 @@ monitoring:
   worst_served_group: Girls Hostel
   mae_v1_on_check: 10.519991296296293
   mae_v2_on_check: 4.335214012345684
-  decision: promote_v2
+  decision: promote
