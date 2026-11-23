@@ -2,7 +2,8 @@
 
 Problem: **MP022** --- Hostel Mess Food Waste (Lucknow)
 
-Faculty: Gaurav Tripathi   Batch: 58
+Faculty: Gaurav Tripathi  
+Batch: 58
 
 Members:
 
