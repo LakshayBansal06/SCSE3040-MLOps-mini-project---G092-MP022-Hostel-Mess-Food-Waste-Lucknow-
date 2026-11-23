@@ -38,3 +38,6 @@ checks:
 
 reports:
   data_checks: reports/data_checks.json
+
+cleaning:
+  output: data/clean/train.csv
