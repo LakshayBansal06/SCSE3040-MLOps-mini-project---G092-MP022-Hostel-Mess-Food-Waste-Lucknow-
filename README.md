@@ -38,7 +38,15 @@ src/mess_waste/           our Python package
   tracking.py             MLflow setup (sqlite:///mlflow.db)
   train.py                trains v1 (3 settings), registers the best, sets @champion
   monitor.py              PSI drift, v1 MAE per hostel, v2 retrain, promotion rule
+  export_model.py         saves the @champion model to models/model.joblib
+app/                      the prediction service
+  main.py                 FastAPI app: POST /predict and GET /health
+  logging_config.py       one JSON line per prediction, to stdout
+models/model.joblib       the champion model the service loads
 tests/                    pytest tests (build their own small data, no CSVs needed)
+Dockerfile                container image for the API
+.github/workflows/ci.yml  test workflow for pushes
+k8s/                      Kubernetes deployment and service
 data/raw/*.csv.dvc        DVC pointers for train.csv and later.csv (CSVs not in git)
 data/raw/holdout_features.csv
 .dvc/config               from dvc init
@@ -118,6 +126,16 @@ registered as `hostel-mess-waste-regressor` version 1 and got the alias
 
 ```bash
 pytest
+```
+
+## API and deployment
+
+The API currently exposes `/health` for container and Kubernetes health checks:
+
+```bash
+uvicorn mess_waste.api:app --app-dir src --host 0.0.0.0 --port 8000
+docker build -t mp022-api:1.0 .
+kubectl apply -f k8s/
 ```
 
 ## Progress

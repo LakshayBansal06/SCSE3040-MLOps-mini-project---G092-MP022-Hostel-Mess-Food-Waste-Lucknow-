@@ -1,0 +1,12 @@
+.git
+.dvc
+.pytest_cache
+__pycache__
+*.py[cod]
+.venv
+venv
+.env
+data
+docs
+reports
+tests
