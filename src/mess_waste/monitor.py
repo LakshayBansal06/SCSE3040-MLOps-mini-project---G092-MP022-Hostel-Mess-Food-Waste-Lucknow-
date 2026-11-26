@@ -12,7 +12,7 @@ from mlflow.tracking import MlflowClient
 from sklearn.base import clone
 from sklearn.metrics import mean_absolute_error
 
-from mess_waste.config import load_params, resolve, file_sha256
+from mess_waste.config import ROOT, load_params, resolve, file_sha256
 from mess_waste.data_cleaning import clean_train
 from mess_waste.data_checks import normalise_label
 from mess_waste.tracking import setup_mlflow
@@ -171,7 +171,6 @@ def main():
         )
 
     # Load the champion model and generate holdout predictions.
-    # Load the champion model and generate holdout predictions.
     champion = mlflow.sklearn.load_model(
         f"models:/{MODEL_NAME}@champion"
     )
@@ -208,8 +207,8 @@ def main():
         "psi": psi_results,
         "v1_mae_by_hostel": hostel_mae,
         "v2_run_id": v2_run_id,
-        "holdout_predictions": str(output_path),
-	"model_artifact": str(model_path),
+        "holdout_predictions": output_path.relative_to(ROOT).as_posix(),
+        "model_artifact": model_path.relative_to(ROOT).as_posix(),
     }
 
     report_path = resolve("reports/monitoring.json")
@@ -230,6 +229,27 @@ def main():
         "best_run_id": client.get_model_version(MODEL_NAME, "1").run_id,
         "registered_model_name": MODEL_NAME,
         "champion_version": int(registered.version if promoted else 1),
+    }
+
+    # The monitoring section too, so findings.yaml can never drift away from
+    # reports/monitoring.json. Hostels keep the client's own spelling.
+    original_hostel = {
+        normalise_label(value): value
+        for value in later_raw[group_col].dropna().unique()
+    }
+    mae_by_group = {
+        original_hostel.get(key, key): value
+        for key, value in hostel_mae.items()
+    }
+
+    findings["monitoring"] = {
+        "psi": psi_results,
+        "most_drifted_feature": max(psi_results, key=psi_results.get),
+        "mae_by_group": mae_by_group,
+        "worst_served_group": max(mae_by_group, key=mae_by_group.get),
+        "mae_v1_on_check": float(v1_mae),
+        "mae_v2_on_check": float(v2_mae),
+        "decision": "promote" if promoted else "keep",
     }
 
     findings_path.parent.mkdir(parents=True, exist_ok=True)

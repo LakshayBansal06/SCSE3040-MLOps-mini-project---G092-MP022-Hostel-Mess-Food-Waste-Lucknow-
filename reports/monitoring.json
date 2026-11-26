@@ -19,6 +19,6 @@
     "girls hostel": 27.514284045584027
   },
   "v2_run_id": "c309165167d94e0e8459721e677c0ed8",
-  "holdout_predictions": "/Users/exs/SCSE3040-MLOps-mini-project---G092-MP022-Hostel-Mess-Food-Waste-Lucknow-/predictions/holdout_predictions.csv",
-  "model_artifact": "/Users/exs/SCSE3040-MLOps-mini-project---G092-MP022-Hostel-Mess-Food-Waste-Lucknow-/models/model.joblib"
+  "holdout_predictions": "predictions/holdout_predictions.csv",
+  "model_artifact": "models/model.joblib"
 }

@@ -128,19 +128,81 @@ registered as `hostel-mess-waste-regressor` version 1 and got the alias
 pytest
 ```
 
-## API and deployment
+## Stage 3: the service, the container, CI and Kubernetes
 
-The API currently exposes `/health` for container and Kubernetes health checks:
+Export the `@champion` model once, then run the API:
 
 ```bash
-uvicorn mess_waste.api:app --app-dir src --host 0.0.0.0 --port 8000
+PYTHONPATH=src python -m mess_waste.export_model    # writes models/model.joblib
+PYTHONPATH="src;." uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+`POST /predict` takes exactly the eight feature fields and returns the
+predicted waste in kg:
+
+```bash
+curl -X POST http://localhost:8000/predict -H "Content-Type: application/json"   -d '{"students_registered":420,"attendance_pct":78.5,"menu_rating":3.8,
+       "temp_c":29.4,"cooked_kg":340.0,"plate_size_cm":26.0,
+       "meal":"lunch","hostel":"Boys Hostel 1"}'
+# {"prediction":33.51,"waste_kg":33.51,"unit":"kg"}
+```
+
+`GET /health` returns `{"status": "ok", "model_loaded": true}`.
+
+The client's two rules live in the pydantic schema, so a bad request is
+rejected with **422** before the model is ever called:
+
+| Rule | Field constraint | Example |
+|---|---|---|
+| `temp_c` above 75 is impossible | `Field(..., le=75)` | `temp_c: 80` -> 422 |
+| `cooked_kg` below 25 is a typo | `Field(..., ge=25)` | `cooked_kg: 10` -> 422 |
+
+The body must have exactly those eight fields: anything extra or missing is
+also a 422. Text labels are normalised the same way the training data was
+(`Boys Hostel 2` -> `boys hostel 2`), so the spelling a caller uses does not
+change the prediction.
+
+Every prediction writes one JSON line to stdout, never to a file:
+
+```json
+{"timestamp": "2026-11-26T16:12:53.398065+00:00", "level": "INFO",
+ "logger": "mp022-api", "event": "prediction", "path": "/predict",
+ "prediction_kg": 33.5104, "latency_ms": 84.348, "features": {...}}
+```
+
+Container and cluster:
+
+```bash
 docker build -t mp022-api:1.0 .
+docker run --rm -p 8000:8000 mp022-api:1.0
 kubectl apply -f k8s/
 ```
+
+`k8s/deployment.yaml` runs **3 replicas** of `mp022-api` from `mp022-api:1.0`
+on container port 8000, with readiness and liveness probes on `/health`
+(liveness waits longer). `k8s/service.yaml` exposes `mp022-svc` on port 80.
+
+`.github/workflows/ci.yml` runs `pytest` on every push.
+
+## Stage 4: drift, retraining and the holdout
+
+```bash
+PYTHONPATH=src python -m mess_waste.monitor
+```
+
+| Question | Answer |
+|---|---|
+| Most drifted column (PSI, 10 bins) | **`temp_c`**, PSI 6.73 (every other column is under 0.07) |
+| Worst-served group (v1 MAE on `later.csv`) | **Girls Hostel**, MAE 27.51 against 7.20 and 8.06 |
+| v1 vs v2 on the last 30% | 10.52 against **4.34** |
+| The client's rule (promote if 10% lower) | 4.34 is 58.8% lower, so **promote** |
+
+`predictions/holdout_predictions.csv` has `record_id,prediction` for all 250
+holdout rows, written by the `@champion` model.
 
 ## Progress
 
 - [x] Stage 1: repo, DVC, the seven data problems, `findings.yaml` data part
 - [x] Stage 2: cleaning code, MLflow tracking and registry, tests
-- [ ] Stage 3: FastAPI service, Dockerfile, GitHub Actions, Kubernetes, logging
-- [ ] Stage 4: drift, retraining, holdout predictions, rest of `findings.yaml`
+- [x] Stage 3: FastAPI service, Dockerfile, GitHub Actions, Kubernetes, logging
+- [x] Stage 4: drift, retraining, holdout predictions, rest of `findings.yaml`

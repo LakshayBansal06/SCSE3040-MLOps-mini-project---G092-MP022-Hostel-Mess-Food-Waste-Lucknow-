@@ -44,9 +44,9 @@ monitoring:
     plate_size_cm: 0.02387446582431789
   most_drifted_feature: temp_c
   mae_by_group:
-    Boys Hostel 1: 7.9221194444444425
-    Boys Hostel 2: 7.974170043572981
-    Girls Hostel: 25.7031876068376
+    Boys Hostel 1: 7.197682471264373
+    Boys Hostel 2: 8.055605708812255
+    Girls Hostel: 27.514284045584027
   worst_served_group: Girls Hostel
   mae_v1_on_check: 10.519991296296293
   mae_v2_on_check: 4.335214012345684
