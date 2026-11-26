@@ -1,5 +1,7 @@
 .git
+.github
 .dvc
+.dvcignore
 .pytest_cache
 __pycache__
 *.py[cod]
@@ -9,4 +11,8 @@ venv
 data
 docs
 reports
+predictions
 tests
+k8s
+mlflow.db
+*.md
