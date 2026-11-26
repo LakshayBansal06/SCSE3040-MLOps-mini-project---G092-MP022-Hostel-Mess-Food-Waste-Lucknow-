@@ -4,3 +4,5 @@ PyYAML==6.0.3
 scikit-learn==1.9.1
 joblib==1.6.0
 pytest==9.1.1
+fastapi==0.115.12
+uvicorn==0.34.0

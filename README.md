@@ -35,7 +35,11 @@ src/mess_waste/           our Python package
   config.py               loads params.yaml, file hashing, CSV loading
   data_checks.py          the seven data-problem checks
   data_cleaning.py        transformations for the cleaned training data
+  api.py                  FastAPI health endpoint
 tests/                    pytest tests (build their own small data, no CSVs needed)
+Dockerfile                container image for the API
+.github/workflows/ci.yml  test workflow for pushes
+k8s/                      Kubernetes deployment and service
 data/raw/*.csv.dvc        DVC pointers for train.csv and later.csv (CSVs not in git)
 data/raw/holdout_features.csv
 .dvc/config               from dvc init
@@ -89,6 +93,16 @@ SHA-256 of the original `train.csv`
 
 ```bash
 pytest
+```
+
+## API and deployment
+
+The API currently exposes `/health` for container and Kubernetes health checks:
+
+```bash
+uvicorn mess_waste.api:app --app-dir src --host 0.0.0.0 --port 8000
+docker build -t mp022-api:1.0 .
+kubectl apply -f k8s/
 ```
 
 ## Progress
