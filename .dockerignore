@@ -16,3 +16,4 @@ tests
 k8s
 mlflow.db
 *.md
+artifacts

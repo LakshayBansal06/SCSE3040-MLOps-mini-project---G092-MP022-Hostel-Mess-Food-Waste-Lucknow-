@@ -43,6 +43,7 @@ app/                      the prediction service
   main.py                 FastAPI app: POST /predict and GET /health
   logging_config.py       one JSON line per prediction, to stdout
 models/model.joblib       the champion model the service loads
+artifacts/mlruns.zip      MLflow model files for v1-v3 (mlruns/ itself is gitignored)
 tests/                    pytest tests (build their own small data, no CSVs needed)
 Dockerfile                container image for the API
 .github/workflows/ci.yml  test workflow for pushes
@@ -199,6 +200,11 @@ PYTHONPATH=src python -m mess_waste.monitor
 
 `predictions/holdout_predictions.csv` has `record_id,prediction` for all 250
 holdout rows, written by the `@champion` model.
+
+`mlflow.db` stores the model files' locations as absolute paths from the
+machine that trained them. To load v1-v3 from the registry on another
+machine, unzip `artifacts/mlruns.zip` into the repository root and point those
+paths at your copy (in a local copy of `mlflow.db`, not the committed one).
 
 ## Progress
 
