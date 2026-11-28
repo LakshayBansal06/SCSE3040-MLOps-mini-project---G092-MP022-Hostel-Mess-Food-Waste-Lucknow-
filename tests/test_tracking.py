@@ -41,7 +41,12 @@ def test_artifact_paths_are_relative_to_the_repository(registry, table, column):
     assert machine_specific == []
 
 
-def test_archive_holds_the_files_of_every_registered_version(registry):
+def test_every_registered_version_has_its_model_files(registry):
+    """Each version's files are in the archive, or already in mlruns/.
+
+    In CI (a fresh clone, no mlruns/) that means the archive. Locally, a
+    version you just trained yourself lives in mlruns/ until it is archived.
+    """
     locations = [
         row[0].removeprefix("./")
         for row in registry.execute("select storage_location from model_versions")
@@ -50,7 +55,9 @@ def test_archive_holds_the_files_of_every_registered_version(registry):
         names = archive.namelist()
 
     for location in locations:
-        assert any(name.startswith(location + "/") for name in names), location
+        in_archive = any(name.startswith(location + "/") for name in names)
+        on_disk = (ROOT / location).is_dir()
+        assert in_archive or on_disk, location
 
 
 def test_restore_artifacts_unpacks_missing_files_only(tmp_path, monkeypatch):
