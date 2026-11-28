@@ -46,6 +46,7 @@ models/model.joblib       the champion model the service loads
 artifacts/mlruns.zip      MLflow model files for v1-v3, unpacked into mlruns/ on first use
 tests/                    pytest tests (build their own small data, no CSVs needed)
 Dockerfile                container image for the API
+.dockerignore             keeps data, tests, mlflow.db and the archive out of the image
 .github/workflows/ci.yml  test workflow for pushes
 k8s/                      Kubernetes deployment and service
 data/raw/*.csv.dvc        DVC pointers for train.csv and later.csv (CSVs not in git)
@@ -53,6 +54,9 @@ data/raw/holdout_features.csv
 .dvc/config               from dvc init
 reports/findings.yaml     the marking form
 reports/data_checks.json  full output of the data checks
+reports/monitoring.json   full output of the Stage 4 monitoring
+predictions/holdout_predictions.csv   record_id,prediction for the 250 holdout rows
+pytest.ini                tells pytest to import from src/ and the repository root
 mlflow.db                 MLflow runs and model registry (committed)
 docs/                     PROBLEM.md and STUDENT_HANDBOOK.md from the brief
 ```
@@ -67,11 +71,29 @@ pip install dvc                    # data versioning
 ```
 
 Put the original `train.csv` and `later.csv` from the zip into `data/raw/`
-(do **not** open and save them in Excel). Check that they match the versions
-tracked by DVC:
+(do **not** open and save them in Excel). Check that they are the files DVC
+tracks: the MD5 must equal the `md5:` line in `data/raw/train.csv.dvc`
+(`35a7b530fe3eb20f8972803f2a0d2c1f`).
 
 ```bash
-dvc status        # should say "Data and pipelines are up to date."
+md5sum data/raw/train.csv                          # macOS: md5 data/raw/train.csv
+```
+
+```powershell
+Get-FileHash -Algorithm MD5 data\raw\train.csv     # Windows PowerShell
+```
+
+On the laptop that ran `dvc add`, `dvc status` also says the data is up to
+date. On a fresh clone the DVC cache is empty, so it reports `not in cache`
+instead; that is expected, and the MD5 check above is the one that matters.
+
+Run every command below from the repository root. They are written for
+macOS/Linux. In Windows PowerShell, set the import path once per terminal and
+leave out the `PYTHONPATH=...` prefix:
+
+```powershell
+$env:PYTHONPATH = "src;."
+python -m mess_waste.data_checks
 ```
 
 ## Stage 1: the seven data problems in `train.csv`
@@ -120,8 +142,9 @@ Every run logs `data_sha256` and `mae_validation`. Three settings were tried:
 | `extra_trees_300` | ExtraTrees, 300 trees, min leaf 2 | **3.301** |
 
 The best (`extra_trees_300`, run `96a1a07d2a444b77be67ddf9194d9c1e`) is
-registered as `hostel-mess-waste-regressor` version 1 and got the alias
-`champion`.
+registered as `hostel-mess-waste-regressor` **version 1** and first got the
+alias `champion`. In Stage 4 the retrained model replaced it as champion (see
+below), so `@champion` now points to **version 3**.
 
 ## Tests
 
@@ -129,14 +152,24 @@ registered as `hostel-mess-waste-regressor` version 1 and got the alias
 pytest
 ```
 
+The tests build their own small data, so they need no CSV and run the same in
+GitHub Actions. They cover the seven data checks, every cleaning fix, the
+config, training with MLflow tracking and the `@champion` alias, the PSI
+score, the API (both client rules, the boundary values, missing and extra
+fields, label spelling, the JSON log line), and that `mlflow.db` works on any
+laptop.
+
 ## Stage 3: the service, the container, CI and Kubernetes
 
-Export the `@champion` model once, then run the API:
+`models/model.joblib` (the `@champion` model) is committed, so the API runs
+straight away:
 
 ```bash
-PYTHONPATH=src python -m mess_waste.export_model    # writes models/model.joblib
-PYTHONPATH="src;." uvicorn app.main:app --host 0.0.0.0 --port 8000
+PYTHONPATH=src:. uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+If the champion ever changes, export it again with
+`PYTHONPATH=src python -m mess_waste.export_model`.
 
 `POST /predict` takes exactly the eight feature fields and returns the
 predicted waste in kg:
@@ -183,7 +216,30 @@ kubectl apply -f k8s/
 on container port 8000, with readiness and liveness probes on `/health`
 (liveness waits longer). `k8s/service.yaml` exposes `mp022-svc` on port 80.
 
+`-p 8000:8000` is needed: `EXPOSE 8000` in the Dockerfile only documents the
+port, it does not open it on your laptop.
+
 `.github/workflows/ci.yml` runs `pytest` on every push.
+
+### Trying the API
+
+Open **http://localhost:8000/docs**, choose `POST /predict`, *Try it out*,
+paste a body and *Execute*. (`http://localhost:8000/` itself has no page and
+answers `{"detail":"Not Found"}`.)
+
+| Body | Expected |
+|---|---|
+| the example above | 200, about 33.51 kg |
+| `{"students_registered":500,"attendance_pct":55,"menu_rating":2.1,"temp_c":38,"cooked_kg":450,"plate_size_cm":28,"meal":"dinner","hostel":"Girls Hostel"}` | 200, about 61.24 kg |
+| the example with `"meal":"LUNCH","hostel":"boys hostel 1"` | 200, the same 33.51 kg |
+| the example with `"temp_c":75.5` | 422, rule 1 |
+| the example with `"cooked_kg":20` | 422, rule 2 |
+| the example without `hostel` | 422, field required |
+| the example plus `"waste_kg":12` | 422, extra field not allowed |
+
+`temp_c` 75 and `cooked_kg` 25 themselves are accepted (the rules say *above*
+75 and *below* 25). The model learned from meals of roughly 150-600 kg cooked,
+so far outside that range its prediction is not meaningful.
 
 ## Stage 4: drift, retraining and the holdout
 
@@ -198,8 +254,16 @@ PYTHONPATH=src python -m mess_waste.monitor
 | v1 vs v2 on the last 30% | 10.52 against **4.34** |
 | The client's rule (promote if 10% lower) | 4.34 is 58.8% lower, so **promote** |
 
+v2 was promoted. The retraining was run twice, so the registry holds two
+retrained versions (2 and 3) with the same scores, and `@champion` is
+**version 3**; `findings.yaml` says the same.
+
 `predictions/holdout_predictions.csv` has `record_id,prediction` for all 250
 holdout rows, written by the `@champion` model.
+
+Re-running `train.py` or `monitor.py` works on any laptop and reproduces these
+numbers, but it registers new model versions and rewrites `findings.yaml` and
+the predictions. Do not commit those files after a demonstration run.
 
 `mlflow.db` stores the model files' locations relative to the repository
 (`./mlruns/...`), so the registry works on every member's laptop. `mlruns/` is
