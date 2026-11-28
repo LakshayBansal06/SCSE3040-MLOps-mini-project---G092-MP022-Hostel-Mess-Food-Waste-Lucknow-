@@ -95,7 +95,11 @@ def test_hostel_label_spelling_does_not_change_the_prediction():
 
     assert as_written.status_code == 200
     assert as_cleaned.status_code == 200
-    assert as_written.json()["prediction"] == as_cleaned.json()["prediction"]
+    # The 300 trees are summed in parallel, so the order of the additions,
+    # and with it the last floating-point digit, can differ between calls.
+    assert as_written.json()["prediction"] == pytest.approx(
+        as_cleaned.json()["prediction"], abs=1e-9
+    )
 
 
 def test_each_prediction_writes_one_json_line_to_stdout(capsys):
